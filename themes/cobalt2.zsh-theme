@@ -75,13 +75,29 @@ prompt_context() {
   fi
 }
 
-# Git: branch/detached head, dirty status
+# Make it ignore .files git repo
 prompt_git() {
-  local ref dirty
-  if $(git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
+  # Skip if in the ~/.git directory or the home directory
+  if [[ "$PWD" == "$HOME/.git" || "$PWD" == "$HOME" ]]; then
+    return
+  fi
+
+  # Check if we're in a Git repository
+  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    # Get the absolute path of the Git directory
+    local git_dir
+    git_dir=$(git rev-parse --git-dir)
+
+    # Skip if the Git directory is ~/.git
+    if [[ "$git_dir" == "$HOME/.git" ]]; then
+      return
+    fi
+
+    local ref dirty
     ZSH_THEME_GIT_PROMPT_DIRTY='±'
     dirty=$(parse_git_dirty)
-    ref=$(git symbolic-ref HEAD 2> /dev/null) || ref="➦ $(git show-ref --head -s --abbrev |head -n1 2> /dev/null)"
+    ref=$(git symbolic-ref HEAD 2> /dev/null) || ref="➦ $(git show-ref --head -s --abbrev | head -n1 2> /dev/null)"
+
     if [[ -n $dirty ]]; then
       prompt_segment yellow black
     else
